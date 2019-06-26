@@ -1038,6 +1038,8 @@ static void token_info_warn(struct parser_params *p, const char *token, token_in
 %token <id> '\13'	"escaped vertical tab"
 %token tUPLUS		RUBY_TOKEN(UPLUS)  "unary+"
 %token tUMINUS		RUBY_TOKEN(UMINUS) "unary-"
+%token tINCR		RUBY_TOKEN(INCR)   "increment"
+%token tDECR		RUBY_TOKEN(DECR)   "decrement"
 %token tPOW		RUBY_TOKEN(POW)    "**"
 %token tCMP		RUBY_TOKEN(CMP)    "<=>"
 %token tEQ		RUBY_TOKEN(EQ)     "=="
@@ -1099,6 +1101,7 @@ static void token_info_warn(struct parser_params *p, const char *token, token_in
 %left  tPIPE
 %nonassoc keyword_defined
 %right '=' tOP_ASGN
+%nonassoc tINCR tDECR
 %left modifier_rescue
 %right '?' ':'
 %nonassoc tDOT2 tDOT3 tBDOT2 tBDOT3
@@ -2070,6 +2073,20 @@ arg		: lhs '=' arg_rhs
 		    /*% %*/
 		    /*% ripper: opassign!($1, $2, $3) %*/
 		    }
+                | var_lhs tINCR
+                    {
+                    /*%%%*/
+                        $$ = new_op_assign(p, $1, '+', NEW_LIT(INT2FIX(1), &@$), &@$);
+                    /*% %*/
+                    /*% ripper: opincrement!($1) %*/
+                    }
+                | var_lhs tDECR
+                    {
+                    /*%%%*/
+                        $$ = new_op_assign(p, $1, '-', NEW_LIT(INT2FIX(1), &@$), &@$);
+                    /*% %*/
+                    /*% ripper: opdecrement!($1) %*/
+                    }
 		| primary_value '[' opt_call_args rbracket tOP_ASGN arg_rhs
 		    {
 		    /*%%%*/
@@ -8981,6 +8998,10 @@ parser_yylex(struct parser_params *p)
 	    SET_LEX_STATE(EXPR_BEG);
 	    return tOP_ASGN;
 	}
+        if (c == '+') {
+            SET_LEX_STATE(EXPR_ARG);
+            return tINCR;
+        }
 	if (IS_BEG() || (IS_SPCARG(c) && arg_ambiguous(p, '+'))) {
 	    SET_LEX_STATE(EXPR_BEG);
 	    pushback(p, c);
@@ -9008,6 +9029,10 @@ parser_yylex(struct parser_params *p)
 	    SET_LEX_STATE(EXPR_BEG);
 	    return tOP_ASGN;
 	}
+        if (c == '-') {
+            SET_LEX_STATE(EXPR_ARG);
+            return tDECR;
+        }
 	if (c == '>') {
 	    SET_LEX_STATE(EXPR_ENDFN);
 	    return tLAMBDA;

@@ -82,6 +82,8 @@ token_ops = %[\
   BDot3         ...     BDOT3
   UPlus         +@      UPLUS
   UMinus        -@      UMINUS
+  Incr          ++      INCR
+  Decr          --      DECR
   Pow           **      POW
   Cmp           <=>     CMP
   PLUS          +
